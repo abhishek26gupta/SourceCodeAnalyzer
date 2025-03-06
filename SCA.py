@@ -1,4 +1,6 @@
+
 import ast
+import sys
 
 DANGEROUS_FUNCTIONS = {"eval", "exec"}
 DANGEROUS_METHODS = {"system", "popen", "Popen", "call", "run"}
@@ -51,20 +53,35 @@ def analyze_code(code):
     except Exception as e:
         return [f"Error analyzing code: {e}"]
 
+def main():
+    if len(sys.argv) > 1:
+        file_path = sys.argv[1]
+        try:
+            with open(file_path, "r") as f:
+                user_code = f.read()
+        except Exception as e:
+            print(f"Error reading file {file_path}: {e}")
+            return
+    else:
+        print("Enter your code below. End input with an empty line:")
+        user_lines = []
+        while True:
+            try:
+                line = input()
+            except EOFError:
+                break
+            if line.strip() == "":
+                break
+            user_lines.append(line)
+        user_code = "\n".join(user_lines)
+
+    issues = analyze_code(user_code)
+    if issues and issues[0] != "No potential vulnerabilities detected.":
+        print("Vulnerability Analysis Report:")
+        for issue in issues:
+            print(issue)
+    else:
+        print("Your code is safe!")
+
 if __name__ == "__main__":
-    sample_code = """
-import os, subprocess, pickle
-user_input = input("Enter command: ")
-eval(user_input)
-exec(user_input)
-os.system(user_input)
-subprocess.Popen(user_input)
-query = "SELECT * FROM users WHERE id = " + user_input
-cursor.execute(query)
-data = pickle.loads(user_input)
-message = f"User provided: {user_input}"
-"""
-    issues = analyze_code(sample_code)
-    print("Vulnerability Analysis Report:")
-    for issue in issues:
-        print(issue)
+    main()
